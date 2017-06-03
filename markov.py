@@ -1,6 +1,7 @@
 import numpy
-from my_api import api
 import twitter
+import sys
+from my_api import api
 
 # my_api should be of the following form
 #import twitter
@@ -100,4 +101,17 @@ def tweet(count):
         except twitter.error.TwitterError:
             print("failed tweet: " + tweet)
 
-tweet(DOSE)
+if len(sys.argv) > 0 and "markov" in sys.argv[1]:
+    chain, seeds = generate_chain(get_tweets())
+    print("SEEDS:")
+    for seed in seeds:
+        print("\t" + seed + " : " + str(seeds[seed]))
+    for prior in chain:
+        print("PRIOR: " + prior)
+        for word in chain[prior]:
+            if word == 0:
+                print("\tTERMINATE : " + str(chain[prior][0]))
+            else:
+                print("\t" + word + " : " + str(chain[prior][word]))
+else:
+    tweet(DOSE)
