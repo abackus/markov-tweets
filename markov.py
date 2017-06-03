@@ -9,9 +9,11 @@ import twitter
 #    access_token_key='',
 #    access_token_secret='')
 
+# Configuration
 INPUT = "aloofAbacus"
 OUTPUT = "aloofAsshat"
 FILE = "aidan.npy"
+DOSE = 3 # how many to tweet at one time
 NOMENTIONS = True # False if you want to @ people
 
 def generate_chain(tweets):
@@ -51,8 +53,11 @@ def generate_chain(tweets):
             chain[prior][word] = counters[prior][word] * 1.0 / sums[prior]
     return chain, seeds
 
+def get_seed(seeds):
+    return numpy.random.choice(list(seeds.keys()), p=list(seeds.values()))
+
 def generate_tweet(chain, seeds):
-    word = numpy.random.choice(list(seeds.keys()), p=list(seeds.values()))
+    word = get_seed(seeds)
     slen = len(word) + 1
     tweet = [word]
     while slen <= 140:
@@ -60,7 +65,7 @@ def generate_tweet(chain, seeds):
         try:
             word = numpy.random.choice(list(curr.keys()), p=list(curr.values()))
         except ValueError:
-            break
+            word = get_seed(seeds)
         if word == 0:
             break
         slen = slen + len(word) + 1
@@ -76,6 +81,13 @@ def generate_tweet(chain, seeds):
 
 def get_tweets():
     statuses = api.GetUserTimeline(screen_name=INPUT, include_rts=False, exclude_replies=True)
+    try:
+        old_statuses = numpy.load(FILE)
+    except IOError:
+        old_statuses = []
+    for s in old_statuses:
+        statuses.append(s)
+    numpy.save(FILE, statuses)
     return [s.text for s in statuses]
 
 def tweet(count):
@@ -88,4 +100,4 @@ def tweet(count):
         except twitter.error.TwitterError:
             print("failed tweet: " + tweet)
 
-tweet(20)
+tweet(DOSE)
