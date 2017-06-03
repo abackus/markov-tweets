@@ -1,8 +1,18 @@
 import numpy
+from my_api import api
+import twitter
+
+# my_api should be of the following form
+#import twitter
+#api = twitter.Api(consumer_key='',
+#    consumer_secret='',
+#    access_token_key='',
+#    access_token_secret='')
 
 INPUT = "aloofAbacus"
 OUTPUT = "aloofAsshat"
 FILE = "aidan.npy"
+NOMENTIONS = True # False if you want to @ people
 
 def generate_chain(tweets):
     # Create counts of everything
@@ -47,7 +57,10 @@ def generate_tweet(chain, seeds):
     tweet = [word]
     while slen <= 140:
         curr = chain[word]
-        word = numpy.random.choice(list(curr.keys()), p=list(curr.values()))
+        try:
+            word = numpy.random.choice(list(curr.keys()), p=list(curr.values()))
+        except ValueError:
+            break
         if word == 0:
             break
         slen = slen + len(word) + 1
@@ -57,22 +70,22 @@ def generate_tweet(chain, seeds):
     stweet = ""
     for word in tweet:
         stweet = stweet + word + " "
+    if NOMENTIONS:
+        stweet = stweet.replace("@", "")
     return stweet[0:-1]
 
-def test():
-    tweets = ["What if the real system updates were the friends we made along the way",
-        "tfw you get reported to the FBI",
-        "*regresses to weeb trash middle school state*",
-        "why are people just totally wrong about everything",
-        "sequel to Hamilton about Evariste Galois when",
-        "but what about the emails that were assassinated in ben gazarra",
-        "a set is perfect if and only if its closed and all its points are limit. stop narcissism by not telling every set that they're perfect!",
-        "i should write a markov chain bot to automate my shitposts for me"]
-    chain, seeds = generate_chain(tweets)
-    #for prior in chain:
-    #    print(str(prior) + ":")
-    #    for word in chain[prior]:
-    #        print("\t" + str(word) + ":" + str(chain[prior][word]))
-    print(generate_tweet(chain, seeds))
+def get_tweets():
+    statuses = api.GetUserTimeline(screen_name=INPUT, include_rts=False, exclude_replies=True)
+    return [s.text for s in statuses]
 
-test()
+def tweet(count):
+    tweets = get_tweets()
+    chain, seeds = generate_chain(tweets)
+    for i in range(count):
+        tweet = generate_tweet(chain, seeds)
+        try:
+            api.PostUpdate(tweet)
+        except twitter.error.TwitterError:
+            print("failed tweet: " + tweet)
+
+tweet(20)
