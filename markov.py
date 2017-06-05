@@ -101,7 +101,7 @@ def tweet(count):
         except twitter.error.TwitterError:
             print("failed tweet: " + tweet)
 
-if len(sys.argv) > 0 and "markov" in sys.argv[1]:
+if len(sys.argv) > 1 and "markov" in sys.argv[1]:
     chain, seeds = generate_chain(get_tweets())
     print("SEEDS:")
     for seed in seeds:
